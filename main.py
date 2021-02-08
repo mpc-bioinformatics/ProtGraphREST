@@ -1,72 +1,22 @@
 import argparse
 import os
 
+from typing import List
 import igraph
-from sanic import Sanic, exceptions, response
+# from sanic import Sanic, exceptions, response
+# from sanic_openapi import doc, swagger_blueprint
 
-app = Sanic("ProtGraphREST")
+import path_to_output
+import get_parameters as get_p
+import models
+from fastapi.exceptions import RequestValidationError
 
 
-@app.route("<accession:string>/path_to_pep")
-async def path_to_peptide(request, accession):
-    """
-    We load a pickle file and return the peptide from the corresponding protein
+from waitress import serve
+import json
 
-    Route Arguments:
-    accession -> The UniProt-Accesion of the protein
-
-    ? Arguments:
-    path=[List of Integers]
-
-    Returns: The actual peptide as PLAIN text (multiple if more paths are set, seperated by "/n")
-    """
-    if "path" not in request.args:
-        raise exceptions.ServerError("Required Argument: 'path' was not defined!", status_code=400)
-
-    # Get directory (non flat structure) # TODO maybe we should allow both: flat anf nonflat?
-    prot_graph_path = os.path.join(
-        GLOABL_ARGS["base_folder"],
-        *[x for x in accession[:-1]],
-        accession[-1] + ".pickle"
-    )
-
-    # TODO should we limit accession to [A-Z0-9]?
-    if not os.path.isfile(prot_graph_path):
-        raise exceptions.ServerError("No graph found for accession {}".format(accession), status_code=404)
-    # check if file exists
-
-    # Load graph
-    graph = igraph.read(prot_graph_path)
-
-    # For each path retrieve the peptide sequence:
-    peptides = []
-    for path in request.args["path"]:
-        # Parse the integer list
-        try:
-            path_ints = list(map(int, path.split(",")))
-        except Exception:
-            raise exceptions.ServerError("Path {} can only consist of ',' and [0-9]", status_code=400)
-
-        # Check if the path is connected
-        if not all(map(lambda x: graph.are_connected(x[0], x[1]), zip(path_ints, path_ints[1:]))):
-            raise exceptions.ServerError("Path {} is not connected".format(path), status_code=400)
-
-        # Check if path goes from start to end:
-        if graph.vs[path_ints[0]]["aminoacid"] != "__start__" or \
-           graph.vs[path_ints[-1]]["aminoacid"] != "__end__":
-            raise exceptions.ServerError(
-                "Path {} does not go from the start node to the end node".format(path), status_code=400
-            )
-
-        # Append the peptide to the list
-        peptides.append(
-            # Strip specific start and end
-            "".join(graph.vs[path_ints[1:-1]]["aminoacid"])
-        )
-
-    return response.text(
-        "\n".join(peptides) + "\n"
-    )
+import falcon
+app = application = falcon.API()
 
 
 def parse_args():
@@ -90,5 +40,10 @@ def parse_args():
 if __name__ == '__main__':
     GLOABL_ARGS = parse_args()
 
+    app.add_route("/{accession}/path_to_peptide", path_to_output.PathToPeptide(GLOABL_ARGS["base_folder"]))
+    app.add_route("/{accession}/path_to_fasta", path_to_output.PathToFasta(GLOABL_ARGS["base_folder"]))
+
+    serve(app, listen="*:8000")
+
     # Start Sanic
-    app.run(host="0.0.0.0", port=8000)
+    # uvicorn.run(app, host="0.0.0.0", port=8000)
