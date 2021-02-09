@@ -1,0 +1,267 @@
+openapi: "3.0.0"
+info:
+  version: "1.0.0"
+  title: "Swagger ProtGraphRest"
+paths:
+  /{accession}/path_to_peptide:
+    get:
+      tags:
+      - "Path to Output"
+      summary: "Get a peptide, depending on the added path"
+      description: ""
+      parameters:
+      - name: accession
+        in: path
+        description: "The Protein Accesion (as in UniProt)"
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: query
+        description: "A Path (Integers, seperated by ',' or '->'"
+        required: false
+        schema:
+          type: string
+      - name: paths
+        in: query
+        description: "Multiple paths seperated by ';'"
+        required: false
+        schema:
+          type: string
+      - name: returns
+        in: query
+        description: "Either 'json' or 'text' (DEFAULT: text)"
+        required: false
+        schema:
+          type: string
+          enum: ["text", "json"]
+      responses:
+        "200":
+          description: "Returns the peptide(s) either as text or json"
+          content:
+            application/json:
+              examples:
+                1 peptide: 
+                  value: |
+                    [ "PEPTIDE" ]
+                2 peptides: 
+                  value: |
+                    [ "PEPTIDE", "PEPTIDES" ]
+            text/plain:
+              examples:
+                1 peptide: 
+                  value: |
+                    PEPTIDE
+                2 peptides: 
+                  value: |
+                    PEPTIDE
+                    PEPTIDES
+    post:
+      tags:
+      - "Path to Output"
+      summary: "Get a peptide, depending on the added path"
+      description: ""
+      parameters:
+      - name: accession
+        in: path
+        description: "The Protein Accesion (as in UniProt)"
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: query
+        description: "A Path (Integers, seperated by ',' or '->'"
+        required: false
+        schema:
+          type: string
+      - name: paths
+        in: query
+        description: "Multiple paths seperated by ';'"
+        required: false
+        schema:
+          type: string
+      - name: returns
+        in: query
+        description: "Either 'json' or 'text' (DEFAULT: text)"
+        required: false
+        schema:
+          type: string
+          enum: ["text", "json"]
+        
+      requestBody:
+          description: "Parameters to be used to retrieve peptides"
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  path:
+                    type: array
+                    items:
+                      type: integer
+                    example: [0,1,2,3]
+                  paths:
+                    type: array
+                    items:
+                      type: array
+                      items: 
+                        type: integer
+                      example: [0,1,2,3]
+                  returns:
+                    type: string
+                    enum: ["text", "json"]
+      responses:
+        "200":
+          description: "Returns the peptide(s) either as text or json"
+          content:
+            application/json:
+              examples:
+                1 peptide: 
+                  value: |
+                    [ "PEPTIDE" ]
+                2 peptides: 
+                  value: |
+                    [ "PEPTIDE", "PEPTIDES" ]
+            text/plain:
+              examples:
+                1 peptide: 
+                  value: |
+                    PEPTIDE
+                2 peptides: 
+                  value: |
+                    PEPTIDE
+                    PEPTIDES
+  /{accession}/path_to_fasta:
+    get:
+      tags:
+      - "Path to Output"
+      summary: "Get a peptide in FASTA format, depending on the added path"
+      description: ""
+      parameters:
+      - name: accession
+        in: path
+        description: "The Protein Accesion (as in UniProt)"
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: query
+        description: "A Path (Integers, seperated by ',' or '->'"
+        required: false
+        schema:
+          type: string
+      - name: paths
+        in: query
+        description: "Multiple paths seperated by ';'"
+        required: false
+        schema:
+          type: string
+      - name: returns
+        in: query
+        description: "Either 'json' or 'text' (DEFAULT: text)"
+        required: false
+        schema:
+          type: string
+          enum: ["text", "json"]
+      responses:
+        "200":
+          description: "Returns the peptide in FASTA either as text or json"
+          content:
+            application/json:
+              examples:
+                1 peptide: 
+                  value: |
+                    [{"head": ">lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>", "seq": "PEPTIDE"}]
+                2 peptides: 
+                  value: |
+                    [{"head": ">lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>", "seq": "PEPTIDE"}, {"head": ">lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>", "seq": "PEPTIDES"}]
+            text/plain:
+              examples:
+                1 peptide: 
+                  value: |
+                    >lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>
+                    PEPTIDE
+                2 peptides: 
+                  value: |
+                    >lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>
+                    PEPTIDE
+                    >lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>
+                    PEPTIDES
+    post:
+      tags:
+      - "Path to Output"
+      summary: "Get a peptide in FASTA format, depending on the added path"
+      description: ""
+      parameters:
+      - name: accession
+        in: path
+        description: "The Protein Accesion (as in UniProt)"
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: query
+        description: "A Path (Integers, seperated by ',' or '->'"
+        required: false
+        schema:
+          type: string
+      - name: paths
+        in: query
+        description: "Multiple paths seperated by ';'"
+        required: false
+        schema:
+          type: string
+      - name: returns
+        in: query
+        description: "Either 'json' or 'text' (DEFAULT: text)"
+        required: false
+        schema:
+          type: string
+          enum: ["text", "json"]
+        
+      requestBody:
+          description: "Parameters to be used to retrieve peptides"
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  path:
+                    type: array
+                    items:
+                      type: integer
+                    example: [0,1,2,3]
+                  paths:
+                    type: array
+                    items:
+                      type: array
+                      items: 
+                        type: integer
+                      example: [0,1,2,3]
+                  returns:
+                    type: string
+                    enum: ["text", "json"]
+      responses:
+        "200":
+          description: "Returns the peptide in FASTA either as text or json"
+          content:
+            application/json:
+              examples:
+                1 peptide: 
+                  value: |
+                    [{"head": ">lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>", "seq": "PEPTIDE"}]
+                2 peptides: 
+                  value: |
+                    [{"head": ">lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>", "seq": "PEPTIDE"}, {"head": ">lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>", "seq": "PEPTIDES"}]
+            text/plain:
+              examples:
+                1 peptide: 
+                  value: |
+                    >lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>
+                    PEPTIDE
+                2 peptides: 
+                  value: |
+                    >lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>
+                    PEPTIDE
+                    >lcl|PEPTIDE_<ACCESSION>|PATH=<PATH>|QUALIFIERS=<QUALIFIERS>
+                    PEPTIDES
