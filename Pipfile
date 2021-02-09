@@ -10,6 +10,7 @@ python-igraph = "*"
 biopython = "*"
 waitress = "*"
 falcon = "*"
+falcon-swagger-ui = "*"
 pydantic = "*"
 
 [requires]

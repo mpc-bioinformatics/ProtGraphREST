@@ -1,6 +1,8 @@
 import argparse
+import os
 
 import falcon
+from falcon_swagger_ui import register_swaggerui_app
 from waitress import serve
 
 import path_to_output
@@ -42,6 +44,18 @@ if __name__ == '__main__':
     GLOABL_ARGS = parse_args()
 
     app.add_error_handler(ProtGraphException, generic_error_handler)
+
+    # Add resources folder to:
+    app.add_static_route('/resources', os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "resources"
+        )
+    )
+
+    register_swaggerui_app(
+        app, "/swagger", "/resources/openapi.yaml",
+        page_title="Swagger for ProtGraphREST"
+    )
 
     app.add_route("/{accession}/path_to_peptide", path_to_output.PathToPeptide(GLOABL_ARGS["base_folder"]))
     app.add_route("/{accession}/path_to_fasta", path_to_output.PathToFasta(GLOABL_ARGS["base_folder"]))
