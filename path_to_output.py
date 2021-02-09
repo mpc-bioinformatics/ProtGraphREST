@@ -57,11 +57,7 @@ class PathToPeptide(object):
             resp.body = "\n".join(peptides)
         resp.status = falcon.HTTP_200
 
-    def on_get(self, req, resp, accession):
-        # Get Protein depending on accession and path
-        prot_graph_path = get_graph_path(self.base_dir, accession)
-        path_obj = load_model(Path, req.params)
-        paths = _concat_paths(path_obj)
+    def _get_peptides(self, resp, prot_graph_path, paths):
         _check_paths_length(paths)
 
         # Load graph
@@ -72,6 +68,17 @@ class PathToPeptide(object):
         for path in paths:
             check_path_incorrect(graph, path)
             peptides.append(get_aminoacids(graph, path[1:-1]))
+
+        return peptides
+
+    def on_get(self, req, resp, accession):
+        # Get Protein depending on accession and path
+        prot_graph_path = get_graph_path(self.base_dir, accession)
+        path_obj = load_model(Path, req.params)
+        paths = _concat_paths(path_obj)
+
+        # Get peptides
+        peptides = self._get_peptides(resp, prot_graph_path, paths)
 
         # Return the content depending on return type
         self._return_content(resp, peptides, path_obj.returns == "json")
@@ -83,16 +90,9 @@ class PathToPeptide(object):
         prot_graph_path = get_graph_path(self.base_dir, accession)
         path_obj_query, path_obj_body = load_model(Path, req.params, req.media)
         paths = _concat_paths(path_obj_query, path_obj_body)
-        _check_paths_length(paths)
 
-        # Load graph
-        graph = igraph.read(prot_graph_path)
-
-        # For each path retrieve the peptide sequence:
-        peptides = []
-        for path in paths:
-            check_path_incorrect(graph, path)
-            peptides.append(get_aminoacids(graph, path[1:-1]))
+        # Get peptides
+        peptides = self._get_peptides(resp, prot_graph_path, paths)
 
         # Return the content depending on return type
         self._return_content(resp, peptides, "json" in [path_obj_query.returns, path_obj_body.returns])
@@ -128,11 +128,7 @@ class PathToFasta(object):
             resp.body = content
         resp.status = falcon.HTTP_200
 
-    def on_get(self, req, resp, accession):
-        # Get Protein depending on accession and path
-        prot_graph_path = get_graph_path(self.base_dir, accession)
-        path_obj = load_model(Path, req.params)
-        paths = _concat_paths(path_obj)
+    def _get_peptides(self, resp, prot_graph_path, paths):
         _check_paths_length(paths)
 
         # Load graph
@@ -148,6 +144,17 @@ class PathToFasta(object):
                     get_qualifiers(graph, path[1:-1])
                 )
             )
+
+        return peptides
+
+    def on_get(self, req, resp, accession):
+        # Get Protein depending on accession and path
+        prot_graph_path = get_graph_path(self.base_dir, accession)
+        path_obj = load_model(Path, req.params)
+        paths = _concat_paths(path_obj)
+
+        # Get peptides
+        peptides = self._get_peptides(resp, prot_graph_path, paths)
 
         # Return the content depending on return type
         self._return_content(
@@ -162,21 +169,9 @@ class PathToFasta(object):
         prot_graph_path = get_graph_path(self.base_dir, accession)
         path_obj_query, path_obj_body = load_model(Path, req.params, req.media)
         paths = _concat_paths(path_obj_query, path_obj_body)
-        _check_paths_length(paths)
 
-        # Load graph
-        graph = igraph.read(prot_graph_path)
-
-        # For each path retrieve the peptide sequence:
-        peptides = []
-        for path in paths:
-            check_path_incorrect(graph, path)
-            peptides.append(
-                (
-                    get_aminoacids(graph, path[1:-1]),
-                    get_qualifiers(graph, path[1:-1])
-                )
-            )
+        # Get peptides
+        peptides = self._get_peptides(resp, prot_graph_path, paths)
 
         # Return the content depending on return type
         self._return_content(
