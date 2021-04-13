@@ -7,6 +7,7 @@ from waitress import serve
 
 import path_to_output
 from prot_graph_exception import ProtGraphException
+from query_weight import mono_weight_query as wq
 
 app = application = falcon.API()
 
@@ -21,11 +22,17 @@ def parse_args():
         "base_folder", type=str,
         help="The base folder containing the generated exported graph files, which can be read by igraph."
     )
+    parser.add_argument(
+        "--mass_dict_factor", "-mdf", type=float, default=1000000000,
+        help="Set the factor for the masses which was used to generate the graphs. "
+        "The default is set to 1 000 000 000, so that each mass can be converted into integers."
+    )
 
     args = parser.parse_args()
 
     return dict(
-        base_folder=args.base_folder
+        base_folder=args.base_folder,
+        mass_dict_factor=args.mass_dict_factor
     )
 
 
@@ -60,4 +67,24 @@ if __name__ == '__main__':
     app.add_route("/{accession}/path_to_peptide", path_to_output.PathToPeptide(GLOABL_ARGS["base_folder"]))
     app.add_route("/{accession}/path_to_fasta", path_to_output.PathToFasta(GLOABL_ARGS["base_folder"]))
 
+    # Routes for weight queries
+    app.add_route(
+        "/{accession}/top_sort/query_mono_weight",
+        wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["top_sort"])
+    )
+    app.add_route(
+        "/{accession}/bfs_fifo/query_mono_weight",
+        wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["bfs_fifo"])
+    )
+    app.add_route(
+        "/{accession}/bfs_filo/query_mono_weight",
+        wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["bfs_filo"])
+    )
+    app.add_route(
+        "/{accession}/dfs/query_mono_weight",
+        wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["dfs"])
+    )
+
+    # Example call for a query via weight
+    # http://localhost:8000/A0A4S5AXF8/top_sort/query_mono_weight?unit=ppm&mono_weight=3394.719&mass_tolerance=5
     serve(app, listen="*:8000")

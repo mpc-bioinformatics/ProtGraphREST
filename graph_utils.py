@@ -2,8 +2,51 @@ import json
 import os
 
 import falcon
+import numpy as np
 
 from prot_graph_exception import ProtGraphException
+from query_weight.query_algorithms import build_pdb
+
+
+def get_pdb_path(base_dir, accession: str, graph, k=5):
+    """ Get intervals from graph from numpy file if it exists. If not generate it """
+    # Check if accession is correct
+    if not accession.isalnum:
+        raise ProtGraphException(
+            falcon.HTTP_404,
+            json.dumps({"message": "Accession can only consist of +[a-zA-Z0-9]"}, indent=4)
+        )
+
+    # Get directory (non flat structure) # TODO maybe we should allow both: flat and nonflat?
+    path = os.path.join(
+        base_dir,
+        *[x for x in accession[:-1]],
+        accession[-1] + ".pdb" + str(k)
+    )
+
+    # Check if the path to the graph file exists
+    if not os.path.isfile(path):
+        # Then generate pdb
+        build_pdb(graph, k=k)
+
+        # Fill entries with nans
+        pdb_entries = [x + [[np.nan, np.nan]]*(k - len(x)) for x in graph.vs["pdb"]]
+
+        # Delete entries in graph itself
+        del graph.vs["pdb"]
+
+        # Generate numpy matrix out of these intervals
+        n_pdb = np.array(pdb_entries)
+
+        # Save it on disk:
+        with open(path, "wb") as f:
+            np.save(f, n_pdb)
+
+        # Return the interval matrix
+        return n_pdb
+
+    # Return the interval matrix
+    return np.load(path)
 
 
 def get_graph_path(base_dir, accession: str):
@@ -88,6 +131,14 @@ def get_aminoacids(graph, path: list):
 
     # return the aminoacids of the path
     return "".join(graph.vs[path]["aminoacid"])
+
+
+def get_start_and_end_node(graph):
+    """ Returns the start and end node from a graph (which is unique!) """
+
+    [__start_node__] = graph.vs.select(aminoacid="__start__")
+    [__end_node__] = graph.vs.select(aminoacid="__end__")
+    return __start_node__, __end_node__
 
 
 def get_qualifiers(graph, path: list):

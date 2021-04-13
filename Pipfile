@@ -7,11 +7,13 @@ pylint = "*"
 
 [packages]
 python-igraph = "*"
+numpy = "*"
 biopython = "*"
 waitress = "*"
 falcon = "*"
 falcon-swagger-ui = "*"
 pydantic = "*"
+protgraph = "*"
 
 [requires]
 python_version = "3.8.6"

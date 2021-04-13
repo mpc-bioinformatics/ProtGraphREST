@@ -15,7 +15,7 @@ def _check_header(req):
     if int(req.headers["CONTENT-LENGTH"]) != 0 and "CONTENT-TYPE" not in req.headers:
         raise ProtGraphException(
             falcon.HTTP_400,
-            json.dumps({"message": "Content-Length needs to be set to application/json"}, indent=4)
+            json.dumps({"message": "Content-Length needs to be set"}, indent=4)
         )
     if req.headers["CONTENT-TYPE"] != "application/json":
         raise ProtGraphException(
