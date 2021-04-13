@@ -48,4 +48,4 @@ class MonoWeigthQuery(BaseModel):
     timeout: Optional[float] = 10000
 
     # Set the number of intervals to be used
-    k: Optional[int] = 5
+    k: Optional[int] = 10
