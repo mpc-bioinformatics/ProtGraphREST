@@ -87,4 +87,7 @@ if __name__ == '__main__':
 
     # Example call for a query via weight
     # http://localhost:8000/A0A4S5AXF8/top_sort/query_mono_weight?unit=ppm&mono_weight=3394.719&mass_tolerance=5
+
+    # Example call for getting a peptide:
+    # http://localhost:8000/A0A4S5AXF8/path_to_fasta?path=0,24,25,9
     serve(app, listen="*:8000")

@@ -4,10 +4,11 @@ import falcon
 import igraph
 
 from graph_utils import (check_path_incorrect, get_aminoacids, get_graph_path,
-                         get_qualifiers)
+                         get_qualifiers, get_pep_and_header_def)
 from models import Path
 from models_utils import load_model
 from prot_graph_exception import ProtGraphException
+
 
 
 def _check_header(req):
@@ -103,27 +104,23 @@ class PathToFasta(object):
     def __init__(self, base_dir):
         self.base_dir = base_dir
 
-    def _return_content(self, resp, peptides, paths, accession, as_json=True):
+    def _return_content(self, resp, peptides, as_json=True):
         if as_json:
             content = []
-            for pep, path in zip(peptides, paths):
+            for idx, (pep, header) in enumerate(peptides):
                 content.append(
                     {
-                        "head": ">lcl|PEPTIDE_" + accession
-                        + "|PATH=" + "->".join([str(i) for i in path])
-                        + "|QUALIFIERS=" + ",".join(pep[1]),
-                        "seq": pep[0]
+                        "head": ">pg|ID_" + str(idx) + "|" + header,
+                        "seq": pep
                     }
                 )
             resp.set_header("content-type", "application/json")
             resp.body = json.dumps(content, ensure_ascii=False)
         else:
             content = ""
-            for pep, path in zip(peptides, paths):
-                content += ">lcl|PEPTIDE_" + accession \
-                    + "|PATH=" + "->".join([str(i) for i in path]) \
-                    + "|QUALIFIERS=" + ",".join(pep[1])
-                content += "\n" + '\n'.join(pep[0][i:i+60] for i in range(0, len(pep[0]), 60)) + "\n"
+            for idx, (pep, header) in enumerate(peptides):
+                content += ">pg|ID_" + str(idx) + "|" + header
+                content += "\n" + '\n'.join(pep[i:i+60] for i in range(0, len(pep), 60)) + "\n"
             resp.set_header("content-type", "text/plain")
             resp.body = content
         resp.status = falcon.HTTP_200
@@ -138,12 +135,8 @@ class PathToFasta(object):
         peptides = []
         for path in paths:
             check_path_incorrect(graph, path)
-            peptides.append(
-                (
-                    get_aminoacids(graph, path[1:-1]),
-                    get_qualifiers(graph, path[1:-1])
-                )
-            )
+            pep, header = get_pep_and_header_def(path, graph)
+            peptides.append((pep, header))
 
         return peptides
 
@@ -158,8 +151,7 @@ class PathToFasta(object):
 
         # Return the content depending on return type
         self._return_content(
-            resp, peptides, paths, accession,
-            path_obj.returns == "json"
+            resp, peptides, path_obj.returns == "json"
         )
 
     def on_post(self, req, resp, accession):
@@ -175,6 +167,5 @@ class PathToFasta(object):
 
         # Return the content depending on return type
         self._return_content(
-            resp, peptides, paths, accession,
-            "json" in [path_obj_query.returns, path_obj_body.returns]
+            resp, peptides, "json" in [path_obj_query.returns, path_obj_body.returns]
         )

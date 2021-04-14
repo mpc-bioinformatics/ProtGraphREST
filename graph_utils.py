@@ -7,6 +7,9 @@ import numpy as np
 from prot_graph_exception import ProtGraphException
 from query_weight.query_algorithms import build_pdb
 
+from protgraph.export.peptides.pep_fasta import PepFasta
+
+PF = PepFasta()
 
 def get_pdb_path(base_dir, accession: str, graph, k=5):
     """ Get intervals from graph from numpy file if it exists. If not generate it """
@@ -131,6 +134,31 @@ def get_aminoacids(graph, path: list):
 
     # return the aminoacids of the path
     return "".join(graph.vs[path]["aminoacid"])
+
+def get_pep_and_header_def(path, graph):
+    """ Get the FASTA Header deginition as a string. Also return the peptide """
+    peptide = "".join(graph.vs[path[1:-1]]["aminoacid"])
+    edges = graph.get_eids(path=path)
+    if "cleaved" in graph.es[edges[0]].attributes():
+        misses = sum(filter(None, graph.es[edges]["cleaved"]))
+    else:
+        misses = -1
+
+    acc = PF._get_accession_or_isoform(graph.vs[path[1]])
+    start_pos = PF._get_position_or_isoform_position(graph.vs[path[1]])
+    end_pos = PF._get_position_or_isoform_position(graph.vs[path[-2]], end=True)
+    l_str_qualifiers = PF._get_qualifiers(graph, edges)
+    quali_entries = ",".join(l_str_qualifiers)
+
+    part_header = "".join(
+        [
+            acc, "(", str(start_pos), ":", str(end_pos), ",",
+            "mssclvg:", str(misses),
+            quali_entries,  ")"
+        ]
+    )
+
+    return peptide, part_header
 
 
 def get_start_and_end_node(graph):
