@@ -108,7 +108,7 @@ class QueryWeight(object):
 
         # Terminate thread if still running
         if t.is_alive():
-            t.terminate()
+            t.terminate()  # pylint: disable=E1101
             t.join()
 
         # Get weights, which were actually retrieved:  (via protgraph)

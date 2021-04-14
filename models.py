@@ -14,14 +14,14 @@ class Path(BaseModel):
     returns: Optional[Literal["text", "json"]] = "text"
 
     @validator("path", pre=True)
-    def convert_str_to_list(cls, v):
+    def convert_str_to_list(cls, v):  # pylint: disable=E0213
         """ Allow string paths seperated by '->' or ',' """
         if type(v) == str:
             return v.replace("->", ",").split(",")
         return v
 
     @validator("paths", pre=True)
-    def convert_str_to_list_of_lists(cls, v):
+    def convert_str_to_list_of_lists(cls, v):  # pylint: disable=E0213
         """ Allow string paths seperated as above and by ';' """
         if type(v) == str:
             return [x.replace("->", ",").split(",") for x in v.split(";")]
