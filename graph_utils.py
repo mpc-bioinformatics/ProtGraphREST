@@ -3,13 +3,13 @@ import os
 
 import falcon
 import numpy as np
+from protgraph.export.peptides.pep_fasta import PepFasta
 
 from prot_graph_exception import ProtGraphException
 from query_weight.query_algorithms import build_pdb
 
-from protgraph.export.peptides.pep_fasta import PepFasta
-
 PF = PepFasta()
+
 
 def get_pdb_path(base_dir, accession: str, graph, k=5):
     """ Get intervals from graph from numpy file if it exists. If not generate it """
@@ -134,6 +134,7 @@ def get_aminoacids(graph, path: list):
 
     # return the aminoacids of the path
     return "".join(graph.vs[path]["aminoacid"])
+
 
 def get_pep_and_header_def(path, graph):
     """ Get the FASTA Header deginition as a string. Also return the peptide """

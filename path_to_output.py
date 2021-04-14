@@ -4,11 +4,10 @@ import falcon
 import igraph
 
 from graph_utils import (check_path_incorrect, get_aminoacids, get_graph_path,
-                         get_qualifiers, get_pep_and_header_def)
+                         get_pep_and_header_def)
 from models import Path
 from models_utils import load_model
 from prot_graph_exception import ProtGraphException
-
 
 
 def _check_header(req):
