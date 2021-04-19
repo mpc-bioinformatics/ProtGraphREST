@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing
 import os
 
 import falcon
@@ -91,4 +92,4 @@ if __name__ == '__main__':
 
     # Example call for getting a peptide:
     # http://localhost:8000/A0A4S5AXF8/path_to_fasta?path=0,24,25,9
-    serve(app, listen="*:8000")
+    serve(app, listen="*:8000", threads=multiprocessing.cpu_count())
