@@ -85,6 +85,10 @@ if __name__ == '__main__':
         "/{accession}/dfs/query_mono_weight",
         wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["dfs"])
     )
+    app.add_route(
+        "/{accession}/top_sort_attrs/query_mono_weight",
+        wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["top_sort_attrs"])
+    )
 
     # Example call for a query via weight
     # http://localhost:8000/A0A4S5AXF8/top_sort/query_mono_weight?unit=ppm&mono_weight=3394.719&mass_tolerance=5

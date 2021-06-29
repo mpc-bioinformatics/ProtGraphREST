@@ -371,6 +371,112 @@ paths:
                         {"path": [0, 24, 25, 9], "weight": 3394.719756833, "seq": "SGLSVYNPTPYYVSFNNAELIAGGKSNPLNVK"}
                         ]
                     }
+  /{accession}/top_sort_attrs/query_mono_weight:
+    get:
+      tags:
+      - "Query Weight"
+      summary: "Query for Peptides using the Topological-Sorting-Traversal"
+      description: ""
+      parameters:
+      - name: accession
+        in: path
+        description: "The Protein Accesion (as in UniProt)"
+        required: true
+        schema:
+          type: string
+      - name: unit
+        in: query
+        description: "Either 'ppm' or 'Da'"
+        required: true
+        schema:
+          type: string
+          enum: ["ppm", "Da"]
+      - name: mass_tolerance
+        in: query
+        description: "Number for the mass tolerance."
+        required: true
+        schema:
+          type: number
+      - name: mono_weight
+        in: query
+        description: "The weight which you want to query."
+        required: true
+        schema:
+          type: number
+      - name: timeout
+        in: query
+        description: "The timeout in seconds, how long you want to wait, before exiting (Default: 10000)"
+        required: false
+        schema:
+          type: number
+      - name: k
+        in: query
+        description: "The number of intervals to be used per node. Default: 10"
+        required: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: "Returns the search results as json."
+          content:
+            application/json:
+              examples:
+                Search Results: 
+                  value: |
+                    {
+                      "time": 0.002875176000088686, 
+                      "results": [
+                        {"path": [0, 24, 25, 9], "weight": 3394.719756833, "seq": "SGLSVYNPTPYYVSFNNAELIAGGKSNPLNVK"}
+                        ]
+                    }
+    post:
+      tags:
+      - "Query Weight"
+      summary: "Query for Peptides using the Topological-Sorting-Traversal"
+      description: ""
+      parameters:
+      - name: accession
+        in: path
+        description: "The Protein Accesion (as in UniProt)"
+        required: true
+        schema:
+          type: string
+      requestBody:
+          description: "Parameters to be used to retrieve peptides"
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  unit:
+                    type: string
+                    enum: ["ppm", "Da"]
+                  mass_tolerance:
+                    type: number
+                    example: 5
+                  mono_weight:
+                    type: number
+                    example: 3300
+                  timeout:
+                    type: number
+                    example: 10000
+                  k:
+                    type: integer
+                    example: 10
+      responses:
+        "200":
+          description: "Returns the search results as json."
+          content:
+            application/json:
+              examples:
+                Search Results: 
+                  value: |
+                    {
+                      "time": 0.002875176000088686, 
+                      "results": [
+                        {"path": [0, 24, 25, 9], "weight": 3394.719756833, "seq": "SGLSVYNPTPYYVSFNNAELIAGGKSNPLNVK"}
+                        ]
+                    }
   /{accession}/bfs_fifo/query_mono_weight:
     get:
       tags:

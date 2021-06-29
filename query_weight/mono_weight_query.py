@@ -20,7 +20,8 @@ ALGORITHMS = dict(
         top_sort=qa.top_sort_query,
         bfs_fifo=qa.bfs_fifo,
         bfs_filo=qa.bfs_fifo,
-        dfs=qa.dfs
+        dfs=qa.dfs,
+        top_sort_attrs=qa.top_sort_attrs_query
     )
 
 

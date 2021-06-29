@@ -186,6 +186,76 @@ def top_sort_query(start, stop, tv_interval, _graph, _n_pdb):
     return dd[_top_sort[-1]][1]
 
 
+def top_sort_attrs_query(start, stop, tv_interval, _graph, _n_pdb):
+    """ Retrieve paths using the top. sorted nodes """
+    # retrieve top sort first
+    # TODO we need to load this from file? Or is it quick enough?
+    
+    sorted_by_position_attr = []
+    s = set([x for x, y in zip(range(_graph.vcount()), _graph.vs.indegree()) if y == 0])
+    marked_edges = [False]*_graph.ecount()
+
+    while len(s) != 0:
+        t = [] # (isoform_name, iso_pos, pos, n)
+        for x in s:
+            node_attrs = _graph.vs[x].attributes()
+
+            if "isoform_accession" in node_attrs:
+                t1 = node_attrs["isoform_accession"] if node_attrs["isoform_accession"]  else node_attrs["accession"]
+            else:
+                t1 = node_attrs["accession"]
+
+            if "isoform_position" in node_attrs:
+                t2 = node_attrs["isoform_position"] if node_attrs["isoform_position"] else float("-inf")
+            else:
+                t2 = float("-inf")
+
+            t3 = node_attrs["position"] if node_attrs["position"] else float("-inf")
+            t.append((t1, t2, t3, x))
+        # sorted up down down 
+        res = sorted(t, key=lambda x: (-len(x[0]), [-ord(c) for c in x[0]], x[1], x[2]))
+        n = res[0][3]
+        s.remove(n)
+
+        sorted_by_position_attr.append(n)
+        for e_out in _graph.vs[n].out_edges():
+            marked_edges[e_out.index] = True
+            in_out_edges = [x.index for x in _graph.vs[e_out.target].in_edges()]
+            if all([marked_edges[x] for x in in_out_edges]):
+                s.add(e_out.target)
+
+    _top_sort = sorted_by_position_attr
+
+    dd = defaultdict(lambda: [[], []])
+
+    dd[_top_sort[0]][0] = [0]
+    dd[_top_sort[0]][1] = [[_top_sort[0]]]
+    for n in _top_sort[0:-1]:
+
+        edges = _graph.es.select(_source=n)
+        eids = [e.index for e in edges]
+        expand_tvs = [_graph.es[e]["mono_weight"] for e in eids]
+        achieved_tvs = [[p_tv + e_tv for e_tv in expand_tvs] for p_tv in dd[n][0]]
+
+        # check if we expand
+        val_fs = [
+            [_func_dist(_n_pdb[out_edge.target, :], tv_interval - e_tv) for out_edge, e_tv in zip(edges, a_tvs)]
+            for a_tvs in achieved_tvs
+        ]
+
+        # get all with val_f == true and compact them in our queue
+        for p, v_fs, a_tvs in zip(dd[n][1], val_fs, achieved_tvs):
+            for e, fs, cur_tv in zip(edges, v_fs, a_tvs):
+                if fs:
+                    dd[e.target][0].append(cur_tv)
+                    dd[e.target][1].append([*p, e.target])
+
+        # save memory
+        del dd[n]
+
+    return dd[_top_sort[-1]][1]
+
+
 def _func_dist(pdb, s_interval):
     """ function to decide wheather an interval is overlapping or not in pdb. """
     endpoints = np.reshape(pdb, -1)
