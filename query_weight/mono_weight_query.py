@@ -1,6 +1,9 @@
+import ctypes
+import inspect
 import json
+import threading
+import time
 import timeit
-from threading import Thread
 
 import falcon
 import igraph
@@ -17,7 +20,8 @@ ALGORITHMS = dict(
         top_sort=qa.top_sort_query,
         bfs_fifo=qa.bfs_fifo,
         bfs_filo=qa.bfs_fifo,
-        dfs=qa.dfs
+        dfs=qa.dfs,
+        top_sort_attrs=qa.top_sort_attrs_query
     )
 
 
@@ -90,10 +94,51 @@ class QueryWeight(object):
         # Execute and measure time  TODO measure time
         resulting_paths = []
 
-        def __wrapper(start, end, q_interval, graph, n_pdb, resulting_paths):
-            resulting_paths.extend(self.method(start, end, q_interval, graph, n_pdb))
+        def _async_raise(tid, exctype):
+            '''Raises an exception in the threads with id tid'''
+            if not inspect.isclass(exctype):
+                raise TypeError("Only types can be raised (not instances)")
+            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), ctypes.py_object(exctype))
+            if res == 0:
+                raise ValueError("invalid thread id")
+            elif res != 1:
+                # "if it returns a number greater than one, you're in trouble,
+                # and you should call it again with exc=NULL to revert the effect"
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), None)
+                raise SystemError("PyThreadState_SetAsyncExc failed")
 
-        t = Thread(target=__wrapper, args=(start, end, q_interval, graph, n_pdb, resulting_paths))
+        class ThreadWithExc(threading.Thread):
+
+            def __init__(self, method):
+                super().__init__()
+                self.method = method
+
+            def run(self):
+                try:
+                    resulting_paths.extend(self.method(start, end, q_interval, graph, n_pdb))
+                finally:
+                    pass
+
+            def _get_my_tid(self):
+                if not self.isAlive():
+                    raise threading.ThreadError("the thread is not active")
+
+                # do we have it cached?
+                if hasattr(self, "_thread_id"):
+                    return self._thread_id
+
+                # no, look for it in the _active dict
+                for tid, tobj in threading._active.items():
+                    if tobj is self:
+                        self._thread_id = tid
+                        return tid
+
+                raise AssertionError("could not determine the thread's id")
+
+            def raiseExc(self, exctype):
+                _async_raise(self._get_my_tid(), exctype)
+
+        t = ThreadWithExc(self.method)
 
         # STAR MEASURING HERE!
         starttime = timeit.default_timer()
@@ -108,7 +153,12 @@ class QueryWeight(object):
 
         # Terminate thread if still running
         if t.is_alive():
-            t.terminate()  # pylint: disable=E1101
+            while t.isAlive():
+                time.sleep(0.01)
+                try:
+                    t.raiseExc(Exception)
+                except Exception:
+                    pass
             t.join()
 
         # Get weights, which were actually retrieved:  (via protgraph)

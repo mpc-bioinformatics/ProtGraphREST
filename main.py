@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing
 import os
 
 import falcon
@@ -84,10 +85,15 @@ if __name__ == '__main__':
         "/{accession}/dfs/query_mono_weight",
         wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["dfs"])
     )
+    app.add_route(
+        "/{accession}/top_sort_attrs/query_mono_weight",
+        wq.QueryWeight(GLOABL_ARGS["base_folder"], GLOABL_ARGS["mass_dict_factor"], wq.ALGORITHMS["top_sort_attrs"])
+    )
 
     # Example call for a query via weight
     # http://localhost:8000/A0A4S5AXF8/top_sort/query_mono_weight?unit=ppm&mono_weight=3394.719&mass_tolerance=5
+    # http://localhost:8000/P04637/top_sort/query_mono_weight?unit=ppm&mono_weight=1000.719&mass_tolerance=5&timeout=10
 
     # Example call for getting a peptide:
     # http://localhost:8000/A0A4S5AXF8/path_to_fasta?path=0,24,25,9
-    serve(app, listen="*:8000")
+    serve(app, listen="*:8000", threads=multiprocessing.cpu_count())
