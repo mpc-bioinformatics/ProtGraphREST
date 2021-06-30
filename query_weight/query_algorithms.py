@@ -190,18 +190,18 @@ def top_sort_attrs_query(start, stop, tv_interval, _graph, _n_pdb):
     """ Retrieve paths using the top. sorted nodes """
     # retrieve top sort first
     # TODO we need to load this from file? Or is it quick enough?
-    
+
     sorted_by_position_attr = []
     s = set([x for x, y in zip(range(_graph.vcount()), _graph.vs.indegree()) if y == 0])
     marked_edges = [False]*_graph.ecount()
 
     while len(s) != 0:
-        t = [] # (isoform_name, iso_pos, pos, n)
+        t = []  # (isoform_name, iso_pos, pos, n)
         for x in s:
             node_attrs = _graph.vs[x].attributes()
 
             if "isoform_accession" in node_attrs:
-                t1 = node_attrs["isoform_accession"] if node_attrs["isoform_accession"]  else node_attrs["accession"]
+                t1 = node_attrs["isoform_accession"] if node_attrs["isoform_accession"] else node_attrs["accession"]
             else:
                 t1 = node_attrs["accession"]
 
@@ -212,7 +212,7 @@ def top_sort_attrs_query(start, stop, tv_interval, _graph, _n_pdb):
 
             t3 = node_attrs["position"] if node_attrs["position"] else float("-inf")
             t.append((t1, t2, t3, x))
-        # sorted up down down 
+        # sorted up down down
         res = sorted(t, key=lambda x: (-len(x[0]), [-ord(c) for c in x[0]], x[1], x[2]))
         n = res[0][3]
         s.remove(n)
