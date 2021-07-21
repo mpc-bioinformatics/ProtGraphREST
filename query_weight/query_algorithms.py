@@ -258,12 +258,10 @@ def top_sort_attrs_query(start, stop, tv_interval, _graph, _n_pdb):
 
 def _func_dist(pdb, s_interval):
     """ function to decide wheather an interval is overlapping or not in pdb. """
-    endpoints = np.reshape(pdb, -1)
-    lower, upper = s_interval
-    i = np.searchsorted(endpoints, lower, side='right')
-    j = np.searchsorted(endpoints, upper, side='left')
+    lower_index = np.searchsorted(pdb[:,1], s_interval[0])
+    upper_index = np.searchsorted(pdb[:,0], s_interval[1])
 
-    if len(np.arange(i // 2, (j + 1) // 2)) == 0:
-        return False  # return here NOT 1, since no overlap
-    else:
-        return True  # return here 0, there is an overlap
+    if upper_index > lower_index  or (len(pdb) != lower_index and lower_index == upper_index and pdb[:,0][lower_index] == s_interval[1]):
+        # Also check for edge case on the right side of queried s_interval
+        return True
+    return False
