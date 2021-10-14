@@ -2,6 +2,7 @@ from collections import defaultdict, deque
 
 import numpy as np
 
+from protgraph.graph_collapse_edges import Or
 
 def _shift_interval_by(intervals, weight):
     """ Shift the intervals by weight """
@@ -190,6 +191,7 @@ def top_sort_attrs_query(start, stop, tv_interval, _graph, _n_pdb):
     """ Retrieve paths using the top. sorted nodes """
     # retrieve top sort first
     # TODO we need to load this from file? Or is it quick enough?
+    # This is the fastest imple right now!
 
     sorted_by_position_attr = []
     s = set([x for x, y in zip(range(_graph.vcount()), _graph.vs.indegree()) if y == 0])
@@ -255,6 +257,108 @@ def top_sort_attrs_query(start, stop, tv_interval, _graph, _n_pdb):
 
     return dd[_top_sort[-1]][1]
 
+
+
+def top_sort_attrs_query_limit_variants(start, stop, tv_interval, _graph, _n_pdb, _limit_variants=3):
+    """ Retrieve paths using the top. sorted nodes """
+    # retrieve top sort first
+    # TODO we need to load this from file? Or is it quick enough?
+    # This implementation is slower but "SHOULD" reduce the searcch space of p53 considerable!
+    # However, the search do take roughly the same amount of time.... (# TODO ...)
+
+    sorted_by_position_attr = []
+    s = set([x for x, y in zip(range(_graph.vcount()), _graph.vs.indegree()) if y == 0])
+    marked_edges = [False]*_graph.ecount()
+
+    while len(s) != 0:
+        t = []  # (isoform_name, iso_pos, pos, n)
+        for x in s:
+            node_attrs = _graph.vs[x].attributes()
+
+            if "isoform_accession" in node_attrs:
+                t1 = node_attrs["isoform_accession"] if node_attrs["isoform_accession"] else node_attrs["accession"]
+            else:
+                t1 = node_attrs["accession"]
+
+            if "isoform_position" in node_attrs:
+                t2 = node_attrs["isoform_position"] if node_attrs["isoform_position"] else float("-inf")
+            else:
+                t2 = float("-inf")
+
+            t3 = node_attrs["position"] if node_attrs["position"] else float("-inf")
+            t.append((t1, t2, t3, x))
+        # sorted up down down
+        res = sorted(t, key=lambda x: (-len(x[0]), [-ord(c) for c in x[0]], x[1], x[2]))
+        n = res[0][3]
+        s.remove(n)
+
+        sorted_by_position_attr.append(n)
+        for e_out in _graph.vs[n].out_edges():
+            marked_edges[e_out.index] = True
+            in_out_edges = [x.index for x in _graph.vs[e_out.target].in_edges()]
+            if all([marked_edges[x] for x in in_out_edges]):
+                s.add(e_out.target)
+
+    _top_sort = sorted_by_position_attr
+
+    dd = defaultdict(lambda: [[], [], []])
+    # param dd[key][2] yields number of variants
+
+    dd[_top_sort[0]][0] = [0]
+    dd[_top_sort[0]][1] = [[_top_sort[0]]]
+    dd[_top_sort[0]][2] = [0]  # Number of variants is 0 at beginning
+    for n in _top_sort[0:-1]:
+
+        edges = _graph.es.select(_source=n)
+        eids = [e.index for e in edges]
+        e_qualifiers = [_resolve_or(x, "VARIANT", min) for x in _graph.es[eids]["qualifiers"]]
+        expand_tvs = [_graph.es[e]["mono_weight"] for e in eids]
+        achieved_tvs = [[p_tv + e_tv for e_tv in expand_tvs] for p_tv in dd[n][0]]
+        acieved_e_qualiefiers = [[var_count + e_q for e_q in e_qualifiers] for var_count in dd[n][2]]
+
+        # check if we expand
+        val_fs = [
+            [
+                # Check for distance
+                _func_dist(_n_pdb[out_edge.target, :], tv_interval - e_tv) and
+                # Check for variants
+                var_count <= _limit_variants
+                for out_edge, e_tv, var_count in zip(edges, a_tvs, a_e_vars)
+            ]
+            for a_tvs, a_e_vars in zip(achieved_tvs, acieved_e_qualiefiers)
+        ]
+
+        # get all with val_f == true and compact them in our queue
+        for p, v_fs, a_tvs, a_e_vars in zip(dd[n][1], val_fs, achieved_tvs, acieved_e_qualiefiers):
+            for e, fs, cur_tv, var_count in zip(edges, v_fs, a_tvs, a_e_vars):
+                if fs:
+                    dd[e.target][0].append(cur_tv)
+                    dd[e.target][1].append([*p, e.target])
+                    dd[e.target][2].append(var_count)
+                    if var_count == 3:
+                        pass
+
+                    if var_count > 3:
+                        pass
+
+        # save memory
+        del dd[n]
+
+    return dd[_top_sort[-1]][1]
+
+def _resolve_or(fts, feature_type, or_count):
+    if fts is None:
+        return 0
+    count = 0
+    for ft in fts:
+        if isinstance(ft, Or):
+            t = [_resolve_or(or_ft, feature_type, or_count) for or_ft in ft]
+            count += or_count(t)
+        else:
+            if ft.type == feature_type:
+                count += 1
+
+    return count
 
 def _func_dist(pdb, s_interval):
     """ function to decide wheather an interval is overlapping or not in pdb. """

@@ -21,7 +21,8 @@ ALGORITHMS = dict(
         bfs_fifo=qa.bfs_fifo,
         bfs_filo=qa.bfs_fifo,
         dfs=qa.dfs,
-        top_sort_attrs=qa.top_sort_attrs_query
+        top_sort_attrs=qa.top_sort_attrs_query,
+        top_sort_attrs_limit_var=qa.top_sort_attrs_query_limit_variants
     )
 
 
