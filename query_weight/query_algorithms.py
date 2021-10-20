@@ -259,7 +259,7 @@ def top_sort_attrs_query(start, stop, tv_interval, _graph, _n_pdb):
 
 
 
-def top_sort_attrs_query_limit_variants(start, stop, tv_interval, _graph, _n_pdb, _limit_variants=3):
+def top_sort_attrs_query_limit_variants(start, stop, tv_interval, _graph, _n_pdb, _limit_variants=1):
     """ Retrieve paths using the top. sorted nodes """
     # retrieve top sort first
     # TODO we need to load this from file? Or is it quick enough?
@@ -301,6 +301,12 @@ def top_sort_attrs_query_limit_variants(start, stop, tv_interval, _graph, _n_pdb
 
     _top_sort = sorted_by_position_attr
 
+    # Generate np_array containing num of variants
+
+    var_counts = np.zeros((_graph.ecount(),), dtype=int)
+    for e in _graph.es:
+        var_counts[e.index] = _resolve_or(e["qualifiers"], "VARIANT", min)
+
     dd = defaultdict(lambda: [[], [], []])
     # param dd[key][2] yields number of variants
 
@@ -311,7 +317,7 @@ def top_sort_attrs_query_limit_variants(start, stop, tv_interval, _graph, _n_pdb
 
         edges = _graph.es.select(_source=n)
         eids = [e.index for e in edges]
-        e_qualifiers = [_resolve_or(x, "VARIANT", min) for x in _graph.es[eids]["qualifiers"]]
+        e_qualifiers = var_counts[eids]
         expand_tvs = [_graph.es[e]["mono_weight"] for e in eids]
         achieved_tvs = [[p_tv + e_tv for e_tv in expand_tvs] for p_tv in dd[n][0]]
         acieved_e_qualiefiers = [[var_count + e_q for e_q in e_qualifiers] for var_count in dd[n][2]]
@@ -335,11 +341,9 @@ def top_sort_attrs_query_limit_variants(start, stop, tv_interval, _graph, _n_pdb
                     dd[e.target][0].append(cur_tv)
                     dd[e.target][1].append([*p, e.target])
                     dd[e.target][2].append(var_count)
-                    if var_count == 3:
+                    if var_count == _limit_variants:
                         pass
 
-                    if var_count > 3:
-                        pass
 
         # save memory
         del dd[n]
